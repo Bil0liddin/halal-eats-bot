@@ -28,14 +28,15 @@ def init_db() -> None:
     from app.models import Base
 
     Base.metadata.create_all(bind=engine)
-    _ensure_language_column()
+    _ensure_column("users", "language", "VARCHAR(8)")
+    _ensure_column("products", "image_url", "VARCHAR(500)")
 
 
-def _ensure_language_column() -> None:
+def _ensure_column(table: str, column: str, sql_type: str) -> None:
     if engine.dialect.name != "sqlite":
         return
     with engine.connect() as conn:
-        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)")}
-        if "language" not in columns:
-            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN language VARCHAR(8)")
+        columns = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+        if column not in columns:
+            conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {sql_type}")
             conn.commit()

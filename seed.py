@@ -4,11 +4,12 @@ from app.db import get_session, init_db
 from app.models import Product
 
 SAMPLE_PRODUCTS = [
-    ("Tovuq Biryani", 12000, "Halal tovuq go'shtli mazali ziravorli guruch"),
-    ("Qo'y Kabob Tarelkasi", 15000, "Guruch va salat bilan grilda pishirilgan halal qo'y kabob shishlari"),
-    ("Falafel O'rami", 8000, "Xrustik falafel, xummus va yangi sabzavotlar bilan o'ralgan"),
-    ("Tovuq Shaurma", 9500, "Sarimsoqli sous bilan halal tovuq shaurma"),
-    ("Sabzavotli Somsa (3 dona)", 5000, "Ziravorli sabzavot ichlik bilan xrustik somsa"),
+    ("O'zbek Palovi", 15000, "Guruch, mol go'shti, sabzi va piyoz bilan tayyorlangan O'zbekistonning milliy taomi"),
+    ("Manti", 12000, "Bug'da pishirilgan, qiymali xamir cho'ntaklari"),
+    ("Lag'mon", 13000, "Qo'lda cho'zilgan lag'mon, mol go'shti va sabzavotlar bilan"),
+    ("Somsa", 6000, "Tandirda pishirilgan, qiymali xamir pirogi"),
+    ("Shashlik", 14000, "Cho'g'da pishirilgan mol go'shti shashligi"),
+    ("Chuchvara", 10000, "Mayda go'shtli chuchvara, issiq sho'rvada"),
 ]
 
 

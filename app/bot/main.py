@@ -2,7 +2,7 @@ import logging
 
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler
 
-from app.bot.handlers import admin, cart, catalog, orders, start
+from app.bot.handlers import admin, cart, orders, start
 from app.config import BOT_TOKEN
 from app.db import init_db
 
@@ -19,8 +19,6 @@ def build_application() -> Application:
 
     application.add_handler(CallbackQueryHandler(start.set_language, pattern=r"^lang:(uz|ko|en|ru)$"))
     application.add_handler(CallbackQueryHandler(start.show_main_menu, pattern="^menu$"))
-    application.add_handler(CallbackQueryHandler(catalog.browse, pattern="^browse$"))
-    application.add_handler(CallbackQueryHandler(catalog.add_item, pattern=r"^add:\d+$"))
     application.add_handler(CallbackQueryHandler(cart.view_cart, pattern="^cart$"))
     application.add_handler(CallbackQueryHandler(cart.remove_item, pattern=r"^remove:\d+$"))
     application.add_handler(CallbackQueryHandler(cart.clear, pattern="^clear$"))

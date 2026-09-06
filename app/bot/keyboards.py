@@ -1,8 +1,8 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
 
 from app.config import BASE_URL
 from app.i18n import LANGUAGE_NAMES, t
-from app.models import CartItem, OrderStatus, Product
+from app.models import CartItem, OrderStatus
 
 LANGUAGE_KEYBOARD = InlineKeyboardMarkup(
     [
@@ -18,10 +18,14 @@ LANGUAGE_KEYBOARD = InlineKeyboardMarkup(
 )
 
 
+def menu_web_app(lang: str) -> WebAppInfo:
+    return WebAppInfo(url=f"{BASE_URL}/menu?lang={lang}")
+
+
 def main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton(t("btn_browse", lang), callback_data="browse")],
+            [InlineKeyboardButton(t("btn_browse", lang), web_app=menu_web_app(lang))],
             [InlineKeyboardButton(t("btn_cart", lang), callback_data="cart")],
             [InlineKeyboardButton(t("btn_orders", lang), callback_data="orders")],
         ]
@@ -32,16 +36,6 @@ def back_to_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([[InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")]])
 
 
-def browse_keyboard(products: list[Product], lang: str) -> InlineKeyboardMarkup:
-    rows = [
-        [InlineKeyboardButton(f"➕ {p.name} — {p.price:,}원", callback_data=f"add:{p.id}")]
-        for p in products
-    ]
-    rows.append([InlineKeyboardButton(t("btn_view_cart", lang), callback_data="cart")])
-    rows.append([InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")])
-    return InlineKeyboardMarkup(rows)
-
-
 def cart_keyboard(items: list[CartItem], lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(f"➖ {ci.product.name} x{ci.quantity}", callback_data=f"remove:{ci.product_id}")]
@@ -50,7 +44,7 @@ def cart_keyboard(items: list[CartItem], lang: str) -> InlineKeyboardMarkup:
     if items:
         rows.append([InlineKeyboardButton(t("btn_checkout", lang), callback_data="checkout")])
         rows.append([InlineKeyboardButton(t("btn_clear_cart", lang), callback_data="clear")])
-    rows.append([InlineKeyboardButton(t("btn_keep_browsing", lang), callback_data="browse")])
+    rows.append([InlineKeyboardButton(t("btn_keep_browsing", lang), web_app=menu_web_app(lang))])
     rows.append([InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 

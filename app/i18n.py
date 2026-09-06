@@ -242,6 +242,78 @@ TEXT = {
         "en": "You can try again from the bot.",
         "ru": "Вы можете попробовать снова через бота.",
     },
+    "menu_title": {
+        "uz": "Menyu",
+        "ko": "메뉴",
+        "en": "Menu",
+        "ru": "Меню",
+    },
+    "menu_subtitle": {
+        "uz": "Taomni tanlang, savatga qo'shiladi. Savat va buyurtmalar botda ham ko'rinadi.",
+        "ko": "요리를 선택하면 장바구니에 담깁니다. 장바구니와 주문 내역은 봇에서도 확인할 수 있습니다.",
+        "en": "Tap a dish to add it to your cart. Your cart and orders are also visible in the bot.",
+        "ru": "Нажмите на блюдо, чтобы добавить его в корзину. Корзина и заказы также видны в боте.",
+    },
+    "tab_menu": {
+        "uz": "🍽️ Menyu",
+        "ko": "🍽️ 메뉴",
+        "en": "🍽️ Menu",
+        "ru": "🍽️ Меню",
+    },
+    "tab_cart": {
+        "uz": "🛒 Savat",
+        "ko": "🛒 장바구니",
+        "en": "🛒 Cart",
+        "ru": "🛒 Корзина",
+    },
+    "tab_orders": {
+        "uz": "📋 Buyurtmalar",
+        "ko": "📋 주문 내역",
+        "en": "📋 Orders",
+        "ru": "📋 Заказы",
+    },
+    "total_label": {
+        "uz": "Jami",
+        "ko": "합계",
+        "en": "Total",
+        "ru": "Итого",
+    },
+    "review_order_heading": {
+        "uz": "Buyurtmani tasdiqlang",
+        "ko": "주문 확인",
+        "en": "Review Your Order",
+        "ru": "Подтверждение заказа",
+    },
+    "resume_payment": {
+        "uz": "💳 To'lashni yakunlash",
+        "ko": "💳 결제 계속하기",
+        "en": "💳 Resume Payment",
+        "ru": "💳 Завершить оплату",
+    },
+    "close_button": {
+        "uz": "Yopish",
+        "ko": "닫기",
+        "en": "Close",
+        "ru": "Закрыть",
+    },
+    "btn_add_item": {
+        "uz": "➕ Qo'shish",
+        "ko": "➕ 담기",
+        "en": "➕ Add",
+        "ru": "➕ Добавить",
+    },
+    "item_added_toast": {
+        "uz": "Savatga qo'shildi ✅ Savatni botda ko'ring",
+        "ko": "장바구니에 담았습니다 ✅ 봇에서 확인하세요",
+        "en": "Added to cart ✅ Check it in the bot",
+        "ru": "Добавлено в корзину ✅ Смотрите в боте",
+    },
+    "generic_error": {
+        "uz": "Xatolik yuz berdi, qayta urinib ko'ring",
+        "ko": "오류가 발생했습니다. 다시 시도해 주세요",
+        "en": "Something went wrong, please try again",
+        "ru": "Произошла ошибка, попробуйте снова",
+    },
 }
 
 

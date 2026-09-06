@@ -48,6 +48,7 @@ class Product(Base):
     name: Mapped[str] = mapped_column(String(128))
     description: Mapped[str] = mapped_column(String(512), default="")
     price: Mapped[int] = mapped_column(Integer)  # KRW, integer won amount
+    image_url: Mapped[str] = mapped_column(String(500), nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True)
 
 

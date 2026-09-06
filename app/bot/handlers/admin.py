@@ -84,8 +84,8 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     parts = [p.strip() for p in raw.split("|")]
     if len(parts) < 2:
         await update.message.reply_text(
-            "Foydalanish: /addproduct Nomi|Narxi|Tavsif\n"
-            "Misol: /addproduct Tovuq Biryani|12000|Achchiq halal tovuq biryani"
+            "Foydalanish: /addproduct Nomi|Narxi|Tavsif|RasmURL(ixtiyoriy)\n"
+            "Misol: /addproduct Tovuq Biryani|12000|Achchiq halal tovuq biryani|https://.../rasm.jpg"
         )
         return
 
@@ -96,8 +96,9 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         await update.message.reply_text("Narx butun son bo'lishi kerak (KRW), masalan: 12000")
         return
     description = parts[2] if len(parts) > 2 else ""
+    image_url = parts[3] if len(parts) > 3 else None
 
     with get_session() as session:
-        session.add(Product(name=name, price=price, description=description))
+        session.add(Product(name=name, price=price, description=description, image_url=image_url))
 
     await update.message.reply_text(f"Mahsulot qo'shildi: {name} — {price:,}원")
