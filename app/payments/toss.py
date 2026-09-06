@@ -27,7 +27,7 @@ async def confirm_payment(payment_key: str, order_id: str, amount: int) -> dict:
         )
     body = response.json()
     if response.status_code >= 400:
-        raise TossPaymentError(body.get("code", "UNKNOWN_ERROR"), body.get("message", "Toss confirm failed"))
+        raise TossPaymentError(body.get("code", "UNKNOWN_ERROR"), body.get("message", "Toss orqali tasdiqlash amalga oshmadi"))
     return body
 
 

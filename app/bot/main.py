@@ -17,6 +17,7 @@ def build_application() -> Application:
     application.add_handler(CommandHandler("adminorders", admin.admin_orders))
     application.add_handler(CommandHandler("addproduct", admin.add_product))
 
+    application.add_handler(CallbackQueryHandler(start.set_language, pattern=r"^lang:(uz|ko|en|ru)$"))
     application.add_handler(CallbackQueryHandler(start.show_main_menu, pattern="^menu$"))
     application.add_handler(CallbackQueryHandler(catalog.browse, pattern="^browse$"))
     application.add_handler(CallbackQueryHandler(catalog.add_item, pattern=r"^add:\d+$"))

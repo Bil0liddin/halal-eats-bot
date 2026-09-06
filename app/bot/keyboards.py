@@ -1,45 +1,63 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.config import BASE_URL
+from app.i18n import LANGUAGE_NAMES, t
 from app.models import CartItem, OrderStatus, Product
 
-MAIN_MENU = InlineKeyboardMarkup(
+LANGUAGE_KEYBOARD = InlineKeyboardMarkup(
     [
-        [InlineKeyboardButton("🍽️ Browse Menu", callback_data="browse")],
-        [InlineKeyboardButton("🛒 Cart", callback_data="cart")],
-        [InlineKeyboardButton("📋 My Orders", callback_data="orders")],
+        [
+            InlineKeyboardButton(LANGUAGE_NAMES["uz"], callback_data="lang:uz"),
+            InlineKeyboardButton(LANGUAGE_NAMES["ko"], callback_data="lang:ko"),
+        ],
+        [
+            InlineKeyboardButton(LANGUAGE_NAMES["en"], callback_data="lang:en"),
+            InlineKeyboardButton(LANGUAGE_NAMES["ru"], callback_data="lang:ru"),
+        ],
     ]
 )
 
-BACK_TO_MENU = InlineKeyboardMarkup([[InlineKeyboardButton("🔙 Back to Menu", callback_data="menu")]])
+
+def main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton(t("btn_browse", lang), callback_data="browse")],
+            [InlineKeyboardButton(t("btn_cart", lang), callback_data="cart")],
+            [InlineKeyboardButton(t("btn_orders", lang), callback_data="orders")],
+        ]
+    )
 
 
-def browse_keyboard(products: list[Product]) -> InlineKeyboardMarkup:
+def back_to_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([[InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")]])
+
+
+def browse_keyboard(products: list[Product], lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(f"➕ {p.name} — {p.price:,}원", callback_data=f"add:{p.id}")]
         for p in products
     ]
-    rows.append([InlineKeyboardButton("🛒 View Cart", callback_data="cart")])
-    rows.append([InlineKeyboardButton("🔙 Back to Menu", callback_data="menu")])
+    rows.append([InlineKeyboardButton(t("btn_view_cart", lang), callback_data="cart")])
+    rows.append([InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
 
-def cart_keyboard(items: list[CartItem]) -> InlineKeyboardMarkup:
+def cart_keyboard(items: list[CartItem], lang: str) -> InlineKeyboardMarkup:
     rows = [
         [InlineKeyboardButton(f"➖ {ci.product.name} x{ci.quantity}", callback_data=f"remove:{ci.product_id}")]
         for ci in items
     ]
     if items:
-        rows.append([InlineKeyboardButton("✅ Checkout", callback_data="checkout")])
-        rows.append([InlineKeyboardButton("🧹 Clear Cart", callback_data="clear")])
-    rows.append([InlineKeyboardButton("🍽️ Keep Browsing", callback_data="browse")])
-    rows.append([InlineKeyboardButton("🔙 Back to Menu", callback_data="menu")])
+        rows.append([InlineKeyboardButton(t("btn_checkout", lang), callback_data="checkout")])
+        rows.append([InlineKeyboardButton(t("btn_clear_cart", lang), callback_data="clear")])
+    rows.append([InlineKeyboardButton(t("btn_keep_browsing", lang), callback_data="browse")])
+    rows.append([InlineKeyboardButton(t("btn_back_to_menu", lang), callback_data="menu")])
     return InlineKeyboardMarkup(rows)
 
 
-def pay_now_keyboard(toss_order_id: str) -> InlineKeyboardMarkup:
+def pay_now_keyboard(toss_order_id: str, lang: str) -> InlineKeyboardMarkup:
     url = f"{BASE_URL}/checkout/{toss_order_id}"
-    return InlineKeyboardMarkup([[InlineKeyboardButton("💳 Pay Now", url=url)]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton(t("btn_pay_now", lang), url=url)]])
 
 
 NEXT_STATUS = {
@@ -48,21 +66,17 @@ NEXT_STATUS = {
     OrderStatus.READY: OrderStatus.COMPLETED,
 }
 
-STATUS_LABEL = {
-    OrderStatus.PENDING_PAYMENT: "⏳ Awaiting payment",
-    OrderStatus.PAID: "💰 Paid",
-    OrderStatus.PREPARING: "👨‍🍳 Preparing",
-    OrderStatus.READY: "✅ Ready for pickup",
-    OrderStatus.COMPLETED: "🏁 Completed",
-    OrderStatus.CANCELLED: "❌ Cancelled",
-}
-
 
 def admin_order_keyboard(order_id: int, status: str) -> InlineKeyboardMarkup:
     rows = []
     next_status = NEXT_STATUS.get(status)
     if next_status:
         rows.append(
-            [InlineKeyboardButton(f"➡️ Mark as {STATUS_LABEL[next_status]}", callback_data=f"admin:advance:{order_id}")]
+            [
+                InlineKeyboardButton(
+                    f"➡️ {t(f'status_{next_status}', 'uz')} deb belgilash",
+                    callback_data=f"admin:advance:{order_id}",
+                )
+            ]
         )
     return InlineKeyboardMarkup(rows) if rows else None

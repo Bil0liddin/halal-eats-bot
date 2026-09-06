@@ -7,6 +7,7 @@ from telegram import Bot
 
 from app.config import BASE_URL, BOT_TOKEN, TOSS_CLIENT_KEY
 from app.db import get_session
+from app.i18n import DEFAULT_LANG, status_label, t, user_lang
 from app.models import Order, OrderStatus, Payment
 from app.payments.toss import TossPaymentError, confirm_payment
 
@@ -18,7 +19,7 @@ notifier_bot = Bot(token=BOT_TOKEN)
 def _order_name(order: Order) -> str:
     if len(order.items) == 1:
         return order.items[0].product_name
-    return f"{order.items[0].product_name} 외 {len(order.items) - 1}건"
+    return f"{order.items[0].product_name} +{len(order.items) - 1}"
 
 
 @app.get("/checkout/{toss_order_id}", response_class=HTMLResponse)
@@ -27,8 +28,9 @@ def checkout_page(toss_order_id: str):
         order = session.query(Order).filter_by(toss_order_id=toss_order_id).first()
         if order is None:
             raise HTTPException(status_code=404, detail="Order not found")
+        lang = user_lang(order.user)
         if order.status != OrderStatus.PENDING_PAYMENT:
-            return HTMLResponse(f"<h1>This order is already {order.status}.</h1>")
+            return HTMLResponse(f"<h1>{t('order_already_status', lang, status=status_label(order.status, lang))}</h1>")
 
         order_name = _order_name(order)
         amount = order.total_amount
@@ -36,16 +38,16 @@ def checkout_page(toss_order_id: str):
 
     return HTMLResponse(f"""
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="{lang}">
 <head>
   <meta charset="utf-8" />
-  <title>Checkout - {toss_order_id}</title>
+  <title>{t('checkout_title', lang, order_id=toss_order_id)}</title>
   <script src="https://js.tosspayments.com/v1/payment"></script>
 </head>
 <body>
-  <h2>Halal Food Order</h2>
+  <h2>{t('checkout_heading', lang)}</h2>
   <p>{order_name} — {amount:,}원</p>
-  <button id="pay-button">Pay with card</button>
+  <button id="pay-button">{t('pay_with_card', lang)}</button>
   <script>
     const tossPayments = TossPayments("{TOSS_CLIENT_KEY}");
     document.getElementById("pay-button").addEventListener("click", function () {{
@@ -76,12 +78,13 @@ async def payment_success(
             raise HTTPException(status_code=404, detail="Order not found")
         if order.total_amount != amount:
             raise HTTPException(status_code=400, detail="Amount mismatch")
+        lang = user_lang(order.user)
 
         try:
             result = await confirm_payment(paymentKey, orderId, amount)
         except TossPaymentError as exc:
             logger.warning("Toss confirm failed for %s: %s", orderId, exc)
-            return HTMLResponse(f"<h1>Payment failed: {exc.message}</h1>", status_code=400)
+            return HTMLResponse(f"<h1>{t('payment_failed_page', lang, message=exc.message)}</h1>", status_code=400)
 
         order.status = OrderStatus.PAID
         payment = order.payment or Payment(order_id=order.id)
@@ -96,12 +99,23 @@ async def payment_success(
 
     await notifier_bot.send_message(
         chat_id=chat_id,
-        text=f"✅ Payment confirmed for order {toss_order_id}. Your order is now being prepared!",
+        text=t("payment_confirmed_notify", lang, order_id=toss_order_id),
     )
-    return HTMLResponse("<h1>Payment complete! You can return to Telegram.</h1>")
+    return HTMLResponse(f"<h1>{t('payment_success_page', lang)}</h1>")
 
 
 @app.get("/payments/fail", response_class=HTMLResponse)
 def payment_fail(code: str = Query(""), message: str = Query(""), orderId: str = Query("")):
     logger.info("Payment failed for %s: %s %s", orderId, code, message)
-    return HTMLResponse(f"<h1>Payment failed: {message or code}</h1><p>You can try again from the bot.</p>")
+
+    lang = DEFAULT_LANG
+    if orderId:
+        with get_session() as session:
+            order = session.query(Order).filter_by(toss_order_id=orderId).first()
+            if order is not None:
+                lang = user_lang(order.user)
+
+    return HTMLResponse(
+        f"<h1>{t('payment_failed_page', lang, message=message or code)}</h1>"
+        f"<p>{t('payment_failed_retry_hint', lang)}</p>"
+    )

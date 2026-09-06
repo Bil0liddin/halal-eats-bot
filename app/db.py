@@ -28,3 +28,14 @@ def init_db() -> None:
     from app.models import Base
 
     Base.metadata.create_all(bind=engine)
+    _ensure_language_column()
+
+
+def _ensure_language_column() -> None:
+    if engine.dialect.name != "sqlite":
+        return
+    with engine.connect() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)")}
+        if "language" not in columns:
+            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN language VARCHAR(8)")
+            conn.commit()

@@ -34,6 +34,7 @@ class User(Base):
     telegram_id: Mapped[int] = mapped_column(unique=True, index=True)
     chat_id: Mapped[int] = mapped_column()
     display_name: Mapped[str] = mapped_column(String(128))
+    language: Mapped[str] = mapped_column(String(8), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     cart_items: Mapped[list["CartItem"]] = relationship(back_populates="user", cascade="all, delete-orphan")

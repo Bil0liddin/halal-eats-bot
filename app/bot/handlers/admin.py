@@ -1,9 +1,10 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from app.bot.keyboards import NEXT_STATUS, STATUS_LABEL, admin_order_keyboard
+from app.bot.keyboards import NEXT_STATUS, admin_order_keyboard
 from app.config import ADMIN_TELEGRAM_IDS
 from app.db import get_session
+from app.i18n import status_label, t, user_lang
 from app.models import Order, OrderStatus, Product
 
 
@@ -13,7 +14,7 @@ def _is_admin(update: Update) -> bool:
 
 async def admin_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_admin(update):
-        await update.message.reply_text("You're not authorized to use this command.")
+        await update.message.reply_text("Sizda bu buyruqdan foydalanish huquqi yo'q.")
         return
 
     with get_session() as session:
@@ -24,16 +25,16 @@ async def admin_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
             .all()
         )
         if not orders:
-            await update.message.reply_text("No active orders right now.")
+            await update.message.reply_text("Hozircha faol buyurtmalar yo'q.")
             return
 
         for o in orders:
             items_text = "\n".join(f"  - {i.product_name} x{i.quantity}" for i in o.items)
             text = (
-                f"#{o.toss_order_id} — {STATUS_LABEL.get(o.status, o.status)}\n"
-                f"Buyer: {o.user.display_name}\n"
+                f"#{o.toss_order_id} — {status_label(o.status, 'uz')}\n"
+                f"Xaridor: {o.user.display_name}\n"
                 f"{items_text}\n"
-                f"Total: {o.total_amount:,}원"
+                f"Jami: {o.total_amount:,}원"
             )
             await update.message.reply_text(text, reply_markup=admin_order_keyboard(o.id, o.status))
 
@@ -41,7 +42,7 @@ async def admin_orders(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 async def advance_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     if not _is_admin(update):
-        await query.answer("Not authorized", show_alert=True)
+        await query.answer("Ruxsat yo'q", show_alert=True)
         return
 
     order_id = int(query.data.split(":")[2])
@@ -49,36 +50,42 @@ async def advance_status(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     with get_session() as session:
         order = session.query(Order).filter_by(id=order_id).first()
         if order is None:
-            await query.answer("Order not found", show_alert=True)
+            await query.answer("Buyurtma topilmadi", show_alert=True)
             return
         next_status = NEXT_STATUS.get(order.status)
         if next_status is None:
-            await query.answer("No further status to advance to.")
+            await query.answer("Keyingi bosqich mavjud emas.")
             return
         order.status = next_status
         new_status = next_status
         buyer_chat_id = order.user.chat_id
+        buyer_lang = user_lang(order.user)
         toss_order_id = order.toss_order_id
 
-    await query.answer(f"Marked as {STATUS_LABEL[new_status]}")
+    await query.answer(f"{status_label(new_status, 'uz')} deb belgilandi")
     await query.edit_message_reply_markup(reply_markup=admin_order_keyboard(order_id, new_status))
     await context.bot.send_message(
         chat_id=buyer_chat_id,
-        text=f"Order #{toss_order_id} update: {STATUS_LABEL[new_status]}",
+        text=t(
+            "order_status_update_notify",
+            buyer_lang,
+            order_id=toss_order_id,
+            status=status_label(new_status, buyer_lang),
+        ),
     )
 
 
 async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not _is_admin(update):
-        await update.message.reply_text("You're not authorized to use this command.")
+        await update.message.reply_text("Sizda bu buyruqdan foydalanish huquqi yo'q.")
         return
 
     raw = update.message.text.partition(" ")[2]
     parts = [p.strip() for p in raw.split("|")]
     if len(parts) < 2:
         await update.message.reply_text(
-            "Usage: /addproduct Name|Price|Description\n"
-            "Example: /addproduct Chicken Biryani|12000|Spicy halal chicken biryani"
+            "Foydalanish: /addproduct Nomi|Narxi|Tavsif\n"
+            "Misol: /addproduct Tovuq Biryani|12000|Achchiq halal tovuq biryani"
         )
         return
 
@@ -86,11 +93,11 @@ async def add_product(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     try:
         price = int(parts[1])
     except ValueError:
-        await update.message.reply_text("Price must be a whole number in KRW, e.g. 12000")
+        await update.message.reply_text("Narx butun son bo'lishi kerak (KRW), masalan: 12000")
         return
     description = parts[2] if len(parts) > 2 else ""
 
     with get_session() as session:
         session.add(Product(name=name, price=price, description=description))
 
-    await update.message.reply_text(f"Added product: {name} — {price:,}원")
+    await update.message.reply_text(f"Mahsulot qo'shildi: {name} — {price:,}원")

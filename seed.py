@@ -4,11 +4,11 @@ from app.db import get_session, init_db
 from app.models import Product
 
 SAMPLE_PRODUCTS = [
-    ("Chicken Biryani", 12000, "Fragrant spiced rice with halal chicken"),
-    ("Lamb Kebab Plate", 15000, "Grilled halal lamb skewers with rice and salad"),
-    ("Falafel Wrap", 8000, "Crispy falafel, hummus, and fresh veggies in a wrap"),
-    ("Chicken Shawarma", 9500, "Halal chicken shawarma with garlic sauce"),
-    ("Vegetable Samosa (3pc)", 5000, "Crispy pastries with spiced vegetable filling"),
+    ("Tovuq Biryani", 12000, "Halal tovuq go'shtli mazali ziravorli guruch"),
+    ("Qo'y Kabob Tarelkasi", 15000, "Guruch va salat bilan grilda pishirilgan halal qo'y kabob shishlari"),
+    ("Falafel O'rami", 8000, "Xrustik falafel, xummus va yangi sabzavotlar bilan o'ralgan"),
+    ("Tovuq Shaurma", 9500, "Sarimsoqli sous bilan halal tovuq shaurma"),
+    ("Sabzavotli Somsa (3 dona)", 5000, "Ziravorli sabzavot ichlik bilan xrustik somsa"),
 ]
 
 
@@ -19,7 +19,7 @@ def main() -> None:
             exists = session.query(Product).filter_by(name=name).first()
             if not exists:
                 session.add(Product(name=name, price=price, description=description))
-    print(f"Seeded {len(SAMPLE_PRODUCTS)} products (skipping any that already existed).")
+    print(f"{len(SAMPLE_PRODUCTS)} ta mahsulot qo'shildi (mavjudlari o'tkazib yuborildi).")
 
 
 if __name__ == "__main__":
