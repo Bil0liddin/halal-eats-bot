@@ -19,3 +19,13 @@ class ChangeLanguage(StatesGroup):
     """Profildan tilni o'zgartirish."""
 
     choosing = State()
+
+
+class EditProfile(StatesGroup):
+    """Profildagi bitta maydonni (ism, telefon, fabrika, joylashuv) tahrirlash."""
+
+    entering_name = State()
+    entering_phone = State()
+    choosing_factory = State()
+    entering_custom_factory = State()
+    entering_spot = State()

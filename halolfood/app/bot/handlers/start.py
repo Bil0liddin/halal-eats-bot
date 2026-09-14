@@ -13,9 +13,8 @@ from app.bot.keyboards import (
     menu_webapp_inline_keyboard,
     phone_keyboard,
 )
-from app.bot.notify import safe_send
+from app.bot.notify import notify_admins
 from app.bot.states import Registration
-from app.config import settings
 from app.i18n import t
 from app.services.users import (
     complete_registration,
@@ -134,8 +133,7 @@ async def on_custom_factory_entered(message: Message, state: FSMContext, user, l
         username=user.username or "-",
         text=message.text or "",
     )
-    for admin_id in settings.admin_id_list:
-        await safe_send(message.bot, admin_id, text)
+    await notify_admins(message.bot, text)
 
     await message.answer(t("factory_not_listed_sent", lang))
     await state.clear()

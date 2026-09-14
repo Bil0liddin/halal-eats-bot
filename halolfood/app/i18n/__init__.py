@@ -181,6 +181,17 @@ TEXTS: dict[str, dict[str, str]] = {
         "ko": "🌐 언어 변경",
     },
     "language_changed": {"uz": "Til o'zgartirildi ✅", "ru": "Язык изменён ✅", "ko": "언어가 변경되었습니다 ✅"},
+    "edit_profile_button": {"uz": "✏️ Tahrirlash", "ru": "✏️ Редактировать", "ko": "✏️ 수정"},
+    "back_button": {"uz": "🔙 Orqaga", "ru": "🔙 Назад", "ko": "🔙 뒤로"},
+    "edit_field_name": {"uz": "👤 Ismni o'zgartirish", "ru": "👤 Изменить имя", "ko": "👤 이름 변경"},
+    "edit_field_phone": {"uz": "📱 Telefonni o'zgartirish", "ru": "📱 Изменить телефон", "ko": "📱 전화번호 변경"},
+    "edit_field_factory": {"uz": "🏭 Fabrikani o'zgartirish", "ru": "🏭 Изменить фабрику", "ko": "🏭 공장 변경"},
+    "edit_field_spot": {"uz": "📍 Joylashuvni o'zgartirish", "ru": "📍 Изменить местоположение", "ko": "📍 위치 변경"},
+    "profile_updated": {
+        "uz": "✅ Ma'lumot yangilandi!",
+        "ru": "✅ Данные обновлены!",
+        "ko": "✅ 정보가 업데이트되었습니다!",
+    },
     # ---- Jadval / skip ----
     "schedule_heading": {
         "uz": "📅 Keyingi 10 kunlik yetkazib berish jadvali",

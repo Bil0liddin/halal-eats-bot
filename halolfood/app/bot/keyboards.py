@@ -78,6 +78,29 @@ def menu_webapp_inline_keyboard(lang: str) -> InlineKeyboardMarkup:
     )
 
 
+def profile_actions_keyboard(lang: str) -> InlineKeyboardMarkup:
+    """Profil ostida ko'rsatiladigan tugmalar: tahrirlash va tilni o'zgartirish."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=t("edit_profile_button", lang), callback_data="profile:edit")],
+            [InlineKeyboardButton(text=t("change_language_button", lang), callback_data="profile:change_lang")],
+        ]
+    )
+
+
+def edit_profile_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
+    """Qaysi maydonni tahrirlashni tanlash menyusi."""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=t("edit_field_name", lang), callback_data="editfield:name")],
+            [InlineKeyboardButton(text=t("edit_field_phone", lang), callback_data="editfield:phone")],
+            [InlineKeyboardButton(text=t("edit_field_factory", lang), callback_data="editfield:factory")],
+            [InlineKeyboardButton(text=t("edit_field_spot", lang), callback_data="editfield:spot")],
+            [InlineKeyboardButton(text=t("back_button", lang), callback_data="profile:back")],
+        ]
+    )
+
+
 def schedule_day_keyboard(delivery_id: int, lang: str) -> InlineKeyboardMarkup:
     """Bitta kunlik yetkazishni bekor qilish tugmasi."""
     return InlineKeyboardMarkup(

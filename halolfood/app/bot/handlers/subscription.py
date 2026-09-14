@@ -15,7 +15,7 @@ from aiogram.types import CallbackQuery, Message
 from sqlalchemy import select
 
 from app.bot.keyboards import admin_confirm_keyboard, is_btn, schedule_day_keyboard
-from app.bot.notify import safe_send
+from app.bot.notify import notify_admins
 from app.config import settings
 from app.db.models import Delivery
 from app.i18n import t
@@ -109,7 +109,6 @@ async def on_i_paid(callback: CallbackQuery, session, user, lang: str) -> None:
         phone=user.phone or "-",
         amount=f"{order.amount_krw:,}",
     )
-    for admin_id in settings.admin_id_list:
-        await safe_send(callback.bot, admin_id, text, reply_markup=admin_confirm_keyboard(order.reference))
+    await notify_admins(callback.bot, text, reply_markup=admin_confirm_keyboard(order.reference))
 
     await callback.message.edit_reply_markup(reply_markup=None)

@@ -9,6 +9,8 @@ import logging
 from aiogram import Bot
 from aiogram.exceptions import TelegramForbiddenError, TelegramRetryAfter
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,3 +56,9 @@ async def broadcast(
         if i % 20 == 0:
             await asyncio.sleep(1)
     return sent
+
+
+async def notify_admins(bot: Bot, text: str, **kwargs) -> None:
+    """.env dagi ADMIN_IDS ro'yxatidagi barcha adminlarga bir xil xabar yuboradi."""
+    for admin_id in settings.admin_id_list:
+        await safe_send(bot, admin_id, text, **kwargs)
