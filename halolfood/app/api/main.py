@@ -46,11 +46,16 @@ _bot = Bot(token=settings.bot_token)
 
 @app.get("/api/me")
 async def get_me(user: User = Depends(current_user)):
-    """Mini App ochilganda foydalanuvchining tili va ro'yxatdan o'tganligini bilish uchun."""
+    """Mini App ochilganda foydalanuvchining tili, ro'yxatdan o'tganligi va kesim (cutoff) soatini bilish uchun.
+
+    `cutoff_hour` shu yerdan olinadi — frontend'da HECH QACHON qattiq
+    (hardcode) yozilmasligi kerak, chunki bu qiymat .env orqali o'zgarishi mumkin.
+    """
     return {
         "lang": user.lang.value if user.lang else "uz",
         "is_registered": user.is_registered,
         "full_name": user.full_name,
+        "cutoff_hour": settings.order_cutoff_hour,
     }
 
 

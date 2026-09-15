@@ -65,6 +65,9 @@ MENU_ITEMS = [
         description_ko="소고기, 당근, 양파를 넣은 우즈베키스탄 전통 쌀 요리",
         category=MealCategory.MAIN,
         contains_beef=True,
+        calories=650,
+        allergens="",
+        spicy_level=0,
     ),
     dict(
         code="MANTI",
@@ -76,6 +79,9 @@ MENU_ITEMS = [
         description_ko="다진 고기를 넣어 찐 만두",
         category=MealCategory.MAIN,
         contains_beef=True,
+        calories=450,
+        allergens="Bug'doy (gluten), tuxum",
+        spicy_level=0,
     ),
     dict(
         code="LAGMON",
@@ -87,6 +93,9 @@ MENU_ITEMS = [
         description_ko="손으로 뽑은 면과 소고기, 채소 볶음",
         category=MealCategory.MAIN,
         contains_beef=True,
+        calories=550,
+        allergens="Bug'doy (gluten)",
+        spicy_level=1,
     ),
     dict(
         code="SHASHLIK",
@@ -98,6 +107,9 @@ MENU_ITEMS = [
         description_ko="숯불에 구운 소고기 꼬치",
         category=MealCategory.MAIN,
         contains_beef=True,
+        calories=500,
+        allergens="",
+        spicy_level=1,
     ),
     dict(
         code="CHUCHVARA",
@@ -109,6 +121,9 @@ MENU_ITEMS = [
         description_ko="따뜻한 육수에 담긴 작은 고기 만두",
         category=MealCategory.SOUP,
         contains_beef=True,
+        calories=400,
+        allergens="Bug'doy (gluten), tuxum",
+        spicy_level=0,
     ),
     dict(
         code="SOMSA",
@@ -120,6 +135,9 @@ MENU_ITEMS = [
         description_ko="화덕에서 구운 다진 고기 페이스트리",
         category=MealCategory.MAIN,
         contains_beef=True,
+        calories=480,
+        allergens="Bug'doy (gluten)",
+        spicy_level=0,
     ),
 ]
 

@@ -46,6 +46,17 @@ def _week_start_and_weekday(d: date) -> tuple[date, int]:
     return week_start, weekday
 
 
+def is_before_cutoff(delivery_date: date, *, now: datetime, cutoff_hour: int) -> bool:
+    """Berilgan kun uchun hali o'zgartirish/bekor qilish mumkinligini tekshiradi.
+
+    Cheklov: yetkazish kunidan OLDINGI kuni soat `cutoff_hour`:00 dan keyin
+    o'sha kunga tegishli hech narsa o'zgartirib bo'lmaydi.
+    """
+    deadline = datetime.combine(delivery_date - timedelta(days=1), time(hour=cutoff_hour))
+    deadline = deadline.replace(tzinfo=now.tzinfo)
+    return now < deadline
+
+
 def _random_code(length: int = 6) -> str:
     return "".join(random.choice(_REFERENCE_ALPHABET) for _ in range(length))
 
@@ -163,9 +174,14 @@ async def get_order_by_reference(session: AsyncSession, reference: str) -> Order
 async def create_order_from_cart(session: AsyncSession, user: User, plan_id: int, *, lang: str = "uz") -> Order:
     """Savatdagi tanlovlardan yangi buyurtma (Order) yaratadi — hali TO'LOVSIZ.
 
-    Tekshiruvlar tartibi: savat bo'shmi -> tanlovlar soni reja bilan mos
-    kelyaptimi -> har bir tanlov haqiqatan ham o'sha kunning menyusidami.
+    Tekshiruvlar tartibi: ro'yxatdan to'liq o'tganmi (fabrikasi bo'lishi
+    SHART — aks holda to'lov tasdiqlanganda Delivery yozuvi yaratib
+    bo'lmaydi) -> savat bo'shmi -> tanlovlar soni reja bilan mos kelyaptimi
+    -> har bir tanlov haqiqatan ham o'sha kunning menyusidami.
     """
+    if not user.is_registered:
+        raise BusinessError(t("error_not_registered", lang))
+
     plan = await session.get(Plan, plan_id)
     if plan is None or not plan.is_active:
         raise BusinessError(t("error_generic", lang))
@@ -315,9 +331,7 @@ async def skip_delivery(
     bekor qilib bo'lmaydi. Bekor qilingan ovqat YO'QOTILMAYDI — obuna muddati
     bir kunga uzaytiriladi.
     """
-    deadline = datetime.combine(delivery.delivery_date - timedelta(days=1), time(hour=cutoff_hour))
-    deadline = deadline.replace(tzinfo=now.tzinfo)
-    if now >= deadline:
+    if not is_before_cutoff(delivery.delivery_date, now=now, cutoff_hour=cutoff_hour):
         raise BusinessError(t("skip_too_late", lang, cutoff=cutoff_hour))
 
     if delivery.status != DeliveryStatus.PLANNED:
@@ -327,6 +341,65 @@ async def skip_delivery(
 
     subscription = await session.get(Subscription, delivery.subscription_id)
     subscription.ends_on = subscription.ends_on + timedelta(days=1)
+
+    await session.flush()
+
+
+async def change_delivery_meal(
+    session: AsyncSession,
+    delivery: Delivery,
+    menu_item_id: int,
+    *,
+    now: datetime,
+    cutoff_hour: int,
+    lang: str = "uz",
+) -> None:
+    """Faol obunadagi bitta kunning ovqatini almashtiradi ("Mening obunam" bo'limidan, to'lovdan KEYIN).
+
+    Kesim vaqti va yangi ovqatning o'sha kun menyusida borligi tekshiriladi —
+    xuddi `set_cart_item` + `validate_cart_against_menu` kabi, faqat bu safar
+    savat emas, ALLAQACHON to'langan Delivery yozuvi ustida ishlaydi.
+    """
+    if not is_before_cutoff(delivery.delivery_date, now=now, cutoff_hour=cutoff_hour):
+        raise BusinessError(t("skip_too_late", lang, cutoff=cutoff_hour))
+
+    if delivery.status != DeliveryStatus.PLANNED:
+        raise BusinessError(t("error_generic", lang))
+
+    week_start, weekday = _week_start_and_weekday(delivery.delivery_date)
+    result = await session.execute(
+        select(MenuSlot).where(
+            MenuSlot.week_start == week_start,
+            MenuSlot.weekday == weekday,
+            MenuSlot.menu_item_id == menu_item_id,
+            MenuSlot.is_published.is_(True),
+        )
+    )
+    if result.scalar_one_or_none() is None:
+        raise BusinessError(t("error_item_not_on_menu", lang, date=delivery.delivery_date.isoformat()))
+
+    delivery.menu_item_id = menu_item_id
+    await session.flush()
+
+
+async def cancel_subscription(session: AsyncSession, subscription: Subscription, *, today: date) -> None:
+    """Obunani butunlay bekor qiladi.
+
+    Kelajakdagi, hali yetkazilmagan kunlar ham "skipped" qilinadi — aks holda
+    oshxona rejasi va kuryer ro'yxati bekor qilingan obuna uchun ham
+    ovqat tayyorlashni davom ettirar edi.
+    """
+    subscription.status = SubscriptionStatus.CANCELLED
+
+    result = await session.execute(
+        select(Delivery).where(
+            Delivery.subscription_id == subscription.id,
+            Delivery.status.in_((DeliveryStatus.PLANNED, DeliveryStatus.CONFIRMED)),
+            Delivery.delivery_date >= today,
+        )
+    )
+    for delivery in result.scalars().all():
+        delivery.status = DeliveryStatus.SKIPPED
 
     await session.flush()
 
