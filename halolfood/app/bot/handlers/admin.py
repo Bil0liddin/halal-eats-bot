@@ -13,6 +13,7 @@ from sqlalchemy import select
 from app.bot.notify import safe_send
 from app.db.models import Order, OrderStatus, User
 from app.i18n import money, t
+from app.services.event_log import log_event
 from app.services.reports import get_courier_sheet, get_kitchen_plan, get_stats
 from app.services.subscriptions import BusinessError, confirm_payment, get_order_by_reference
 
@@ -155,6 +156,13 @@ async def on_admin_reject(callback: CallbackQuery, session, user: User, lang: st
     order_user = await session.get(User, order.user_id)
     user_lang = order_user.lang.value if order_user.lang else "uz"
     await safe_send(callback.bot, order_user.telegram_id, t("payment_rejected_notify_user", user_lang))
+
+    log_event(
+        "order_canceled",
+        order_user.telegram_id,
+        order_user.full_name or "-",
+        f"{reference} buyurtmasi, admin tomonidan rad etildi",
+    )
 
     await callback.answer(t("admin_order_rejected", lang, reference=reference))
     await callback.message.edit_reply_markup(reply_markup=None)

@@ -29,6 +29,10 @@ class Settings(BaseSettings):
     manual_bank_account: str = "000-0000-0000-00"
     manual_bank_holder: str = "Halol Food"
 
+    # Hodisalarni tashqi webhook'ga (n8n) yuborish — sinov uchun, ixtiyoriy.
+    # Bo'sh bo'lsa hech narsa yuborilmaydi.
+    n8n_webhook_url: str = ""
+
     @property
     def admin_id_list(self) -> list[int]:
         """ADMIN_IDS satrini butun sonlar ro'yxatiga aylantiradi."""

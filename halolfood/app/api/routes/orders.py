@@ -16,6 +16,7 @@ from app.bot.notify import safe_send
 from app.config import settings
 from app.db.models import Delivery, Plan, User
 from app.i18n import t, weekday_name
+from app.services.event_log import log_event
 from app.services.payments import get_provider
 from app.services.subscriptions import (
     BusinessError,
@@ -61,6 +62,14 @@ async def checkout(
         order = await create_order_from_cart(session, user, payload.plan_id, lang=lang)
     except BusinessError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc
+
+    plan = await session.get(Plan, order.plan_id)
+    log_event(
+        "new_order",
+        user.telegram_id,
+        user.full_name or "-",
+        f"{plan.name(lang) if plan else order.plan_id}, {(order.ends_on - order.starts_on).days + 1} kun, {order.amount_krw:,} won",
+    )
 
     provider = get_provider()
     intent = await provider.create_payment(
@@ -180,7 +189,14 @@ async def cancel_my_subscription(
     if subscription is None:
         raise HTTPException(status_code=404, detail="Faol obuna topilmadi")
 
+    plan = await session.get(Plan, subscription.plan_id)
     await cancel_subscription(session, subscription, today=date.today())
+    log_event(
+        "order_canceled",
+        user.telegram_id,
+        user.full_name or "-",
+        f"{plan.name(user.lang.value if user.lang else 'uz') if plan else subscription.plan_id} obunasi, foydalanuvchi tomonidan bekor qilindi",
+    )
     return {"ok": True}
 
 

@@ -16,6 +16,7 @@ from app.bot.keyboards import (
 from app.bot.notify import notify_admins
 from app.bot.states import Registration
 from app.i18n import t
+from app.services.event_log import log_event
 from app.services.users import (
     complete_registration,
     list_active_factories,
@@ -153,6 +154,13 @@ async def on_spot_entered(message: Message, state: FSMContext, session, user, la
     )
     await session.flush()
     await state.clear()
+
+    log_event(
+        "user_signup",
+        user.telegram_id,
+        user.full_name or (message.from_user.username if message.from_user else "?"),
+        f"{user.full_name}, tel: {user.phone}, factory_id: {user.factory_id}",
+    )
 
     await message.answer(t("registration_complete", lang, open_app=t("btn_open_app", lang)))
     await _send_main_menu(message, lang)
