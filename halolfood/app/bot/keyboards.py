@@ -64,7 +64,7 @@ def main_menu_keyboard(lang: str) -> ReplyKeyboardMarkup:
     """
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text=t("btn_my_subscription", lang)), KeyboardButton(text=t("btn_schedule", lang))],
+            [KeyboardButton(text=t("btn_my_subscription", lang))],
             [KeyboardButton(text=t("btn_profile", lang)), KeyboardButton(text=t("btn_help", lang))],
         ],
         resize_keyboard=True,
@@ -98,13 +98,6 @@ def edit_profile_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
             [InlineKeyboardButton(text=t("edit_field_spot", lang), callback_data="editfield:spot")],
             [InlineKeyboardButton(text=t("back_button", lang), callback_data="profile:back")],
         ]
-    )
-
-
-def schedule_day_keyboard(delivery_id: int, lang: str) -> InlineKeyboardMarkup:
-    """Bitta kunlik yetkazishni bekor qilish tugmasi."""
-    return InlineKeyboardMarkup(
-        inline_keyboard=[[InlineKeyboardButton(text=t("skip_button", lang), callback_data=f"skip:{delivery_id}")]]
     )
 
 

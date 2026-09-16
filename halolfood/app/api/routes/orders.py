@@ -25,6 +25,7 @@ from app.services.subscriptions import (
     get_active_subscription,
     get_order_by_reference,
     is_before_cutoff,
+    skip_delivery,
 )
 
 router = APIRouter()
@@ -47,6 +48,12 @@ class ChangeDeliveryIn(BaseModel):
 
     delivery_date: date
     menu_item_id: int
+
+
+class SkipDeliveryIn(BaseModel):
+    """Bitta kunlik yetkazishni bekor qilish uchun kiruvchi ma'lumot."""
+
+    delivery_date: date
 
 
 @router.post("/orders/checkout")
@@ -201,6 +208,30 @@ async def change_my_delivery(
         await change_delivery_meal(
             session, delivery, payload.menu_item_id, now=now, cutoff_hour=settings.order_cutoff_hour, lang=lang
         )
+    except BusinessError as exc:
+        raise HTTPException(status_code=400, detail=exc.message) from exc
+
+    return {"ok": True}
+
+
+@router.post("/deliveries/skip")
+async def skip_my_delivery(
+    payload: SkipDeliveryIn,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(current_user),
+):
+    """"Mening obunam" bo'limidan bitta kunni butunlay bekor qiladi (obuna muddati 1 kunga uzayadi)."""
+    lang = user.lang.value if user.lang else "uz"
+    result = await session.execute(
+        select(Delivery).where(Delivery.user_id == user.id, Delivery.delivery_date == payload.delivery_date)
+    )
+    delivery = result.scalar_one_or_none()
+    if delivery is None:
+        raise HTTPException(status_code=404, detail="Yetkazish topilmadi")
+
+    now = datetime.now(_TZ)
+    try:
+        await skip_delivery(session, delivery, now=now, cutoff_hour=settings.order_cutoff_hour, lang=lang)
     except BusinessError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc
 

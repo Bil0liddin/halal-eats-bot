@@ -162,6 +162,7 @@ _PAGE = r"""
     <div class="sheet">
       <h2 id="day-sheet-heading"></h2>
       <div id="day-sheet-list"></div>
+      <button id="day-sheet-skip-link" class="cancel-link hidden"></button>
     </div>
   </div>
 
@@ -226,6 +227,10 @@ _PAGE = r"""
         sub_heading: "📦 Mening obunam", no_subscription: "Sizda hozircha faol obuna yo'q.",
         meals_left: "Qolgan ovqatlar", valid_until: "Amal qilish muddati",
         change_button: "O'zgartirish", locked_label: "🔒 O'zgartirib bo'lmaydi",
+        skip_day_link: "Bu kunni bekor qilish",
+        skip_day_title: "Shu kunni bekor qilasizmi?",
+        skip_day_body: "Bu kun uchun ovqat yetkazilmaydi, obuna muddati 1 kunga uzayadi.",
+        skip_day_yes: "Ha, bekor qilish",
         order_created: "Buyurtma yaratildi", pay_instructions_sent: "\n\nTo'lov ma'lumotlari bot chatiga ham yuborildi.",
         not_registered: "Avval botda /start buyrug'ini bering va ro'yxatdan o'ting",
         error: "Xatolik yuz berdi", network_error: "Tarmoq xatosi — internetni tekshiring",
@@ -253,6 +258,10 @@ _PAGE = r"""
         sub_heading: "📦 Моя подписка", no_subscription: "У вас пока нет активной подписки.",
         meals_left: "Осталось порций", valid_until: "Действует до",
         change_button: "Изменить", locked_label: "🔒 Изменить нельзя",
+        skip_day_link: "Отменить этот день",
+        skip_day_title: "Отменить этот день?",
+        skip_day_body: "В этот день еда не будет доставлена, подписка продлится на 1 день.",
+        skip_day_yes: "Да, отменить",
         order_created: "Заказ создан", pay_instructions_sent: "\n\nДанные для оплаты также отправлены в чат бота.",
         not_registered: "Сначала отправьте /start боту и зарегистрируйтесь",
         error: "Произошла ошибка", network_error: "Ошибка сети — проверьте интернет",
@@ -280,6 +289,10 @@ _PAGE = r"""
         sub_heading: "📦 내 구독", no_subscription: "현재 활성화된 구독이 없습니다.",
         meals_left: "남은 식사", valid_until: "유효 기간",
         change_button: "변경", locked_label: "🔒 변경 불가",
+        skip_day_link: "이 날 취소하기",
+        skip_day_title: "이 날을 취소하시겠습니까?",
+        skip_day_body: "이 날은 배달되지 않으며, 구독 기간이 1일 연장됩니다.",
+        skip_day_yes: "예, 취소합니다",
         order_created: "주문이 생성되었습니다", pay_instructions_sent: "\n\n결제 정보가 봇 채팅에도 전송되었습니다.",
         not_registered: "먼저 봇에서 /start로 등록해 주세요",
         error: "오류가 발생했습니다", network_error: "네트워크 오류 — 인터넷 연결을 확인하세요",
@@ -382,24 +395,55 @@ _PAGE = r"""
       cancelLink.classList.toggle("hidden", !activeSubscription);
     }
 
-    document.getElementById("cancel-sub-link").addEventListener("click", () => {
-      document.getElementById("cancel-confirm-title").textContent = L("cancel_title");
-      document.getElementById("cancel-confirm-body").textContent = L("cancel_body");
-      document.getElementById("cancel-confirm-yes").textContent = L("cancel_yes");
-      document.getElementById("cancel-confirm-no").textContent = L("cancel_no");
+    // Bitta umumiy tasdiqlash varag'i — obunani bekor qilish VA bitta kunni
+    // bekor qilish shu varaqdan foydalanadi, faqat matn va amal (onConfirm) farqlanadi.
+    let pendingConfirmAction = null;
+
+    function openConfirmSheet({ title, body, yesText, noText, onConfirm }) {
+      document.getElementById("cancel-confirm-title").textContent = title;
+      document.getElementById("cancel-confirm-body").textContent = body;
+      document.getElementById("cancel-confirm-yes").textContent = yesText;
+      document.getElementById("cancel-confirm-no").textContent = noText;
+      pendingConfirmAction = onConfirm;
       document.getElementById("cancel-confirm-overlay").hidden = false;
+    }
+
+    document.getElementById("cancel-sub-link").addEventListener("click", () => {
+      openConfirmSheet({
+        title: L("cancel_title"), body: L("cancel_body"),
+        yesText: L("cancel_yes"), noText: L("cancel_no"),
+        onConfirm: async () => {
+          await api("/api/subscriptions/cancel", { method: "POST" });
+          activeSubscription = null;
+          renderPlans();
+          showToast(L("cancel_yes"));
+        },
+      });
+    });
+    document.getElementById("day-sheet-skip-link").addEventListener("click", () => {
+      const dateStr = dayPickerDate;
+      openConfirmSheet({
+        title: L("skip_day_title"), body: L("skip_day_body"),
+        yesText: L("skip_day_yes"), noText: L("cancel_no"),
+        onConfirm: async () => {
+          await api("/api/deliveries/skip", { method: "POST", body: JSON.stringify({ delivery_date: dateStr }) });
+          closeDaySheet();
+          await loadSubscription();
+          renderSubscriptionScreen();
+          showToast(L("skip_day_yes"));
+        },
+      });
     });
     document.getElementById("cancel-confirm-no").addEventListener("click", () => {
       document.getElementById("cancel-confirm-overlay").hidden = true;
+      pendingConfirmAction = null;
     });
     document.getElementById("cancel-confirm-yes").addEventListener("click", async () => {
       document.getElementById("cancel-confirm-overlay").hidden = true;
-      try {
-        await api("/api/subscriptions/cancel", { method: "POST" });
-        activeSubscription = null;
-        renderPlans();
-        showToast(L("cancel_yes"));
-      } catch (e) { showToast(e.message); }
+      const action = pendingConfirmAction;
+      pendingConfirmAction = null;
+      if (!action) return;
+      try { await action(); } catch (e) { showToast(e.message); }
     });
 
     // --- 2-ekran: Menyu tuzish ---
@@ -538,6 +582,10 @@ _PAGE = r"""
           <button class="info-btn" onclick="event.stopPropagation(); openInfoSheet(${item.menu_item_id}, '${mode}')">ℹ️</button>
         </div>
       `).join("");
+
+      const skipLink = document.getElementById("day-sheet-skip-link");
+      skipLink.textContent = L("skip_day_link");
+      skipLink.classList.toggle("hidden", mode !== "change");
 
       document.getElementById("day-sheet-overlay").hidden = false;
       setBackButton(closeDaySheet);

@@ -83,11 +83,6 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "📦 Моя подписка",
         "ko": "📦 내 구독",
     },
-    "btn_schedule": {
-        "uz": "📅 Yetkazib berish jadvali",
-        "ru": "📅 График доставки",
-        "ko": "📅 배달 일정",
-    },
     "btn_profile": {
         "uz": "👤 Profil",
         "ru": "👤 Профиль",
@@ -128,6 +123,11 @@ TEXTS: dict[str, dict[str, str]] = {
     "status_paused": {"uz": "⏸ To'xtatilgan", "ru": "⏸ Приостановлена", "ko": "⏸ 일시중지"},
     "status_expired": {"uz": "⌛ Muddati tugagan", "ru": "⌛ Истекла", "ko": "⌛ 만료됨"},
     "status_cancelled": {"uz": "❌ Bekor qilingan", "ru": "❌ Отменена", "ko": "❌ 취소됨"},
+    "manage_in_app_hint": {
+        "uz": "Kunlik ovqatni o'zgartirish yoki obunani bekor qilish uchun Mini App'ni oching.",
+        "ru": "Чтобы изменить блюдо на день или отменить подписку, откройте Mini App.",
+        "ko": "일일 메뉴를 변경하거나 구독을 취소하려면 Mini App을 열어주세요.",
+    },
     # ---- To'lov / checkout ----
     "checkout_heading": {
         "uz": "🧾 Buyurtmangiz",
@@ -192,28 +192,12 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "✅ Данные обновлены!",
         "ko": "✅ 정보가 업데이트되었습니다!",
     },
-    # ---- Jadval / skip ----
-    "schedule_heading": {
-        "uz": "📅 Keyingi 10 kunlik yetkazib berish jadvali",
-        "ru": "📅 График доставки на ближайшие 10 дней",
-        "ko": "📅 향후 10일 배달 일정",
-    },
-    "skip_button": {"uz": "⏭ Bekor qilish", "ru": "⏭ Пропустить", "ko": "⏭ 건너뛰기"},
-    "skip_confirmed": {
-        "uz": "✅ {date} kuni bekor qilindi. Obunangiz muddati 1 kunga uzaytirildi.",
-        "ru": "✅ Доставка {date} отменена. Срок подписки продлён на 1 день.",
-        "ko": "✅ {date} 배달이 취소되었습니다. 구독 기간이 하루 연장되었습니다.",
-    },
+    # ---- Skip (bitta kunni bekor qilish, endi Mini App orqali) ----
     "skip_too_late": {
         "uz": "Kechikdingiz — bu kunni endi bekor qilib bo'lmaydi (soat {cutoff}:00 dan keyin bekor qilinmaydi).",
         "ru": "Уже поздно — этот день нельзя отменить (после {cutoff}:00 отмена недоступна).",
         "ko": "이미 늦었습니다 — 이 날짜는 취소할 수 없습니다 ({cutoff}시 이후 취소 불가).",
     },
-    "delivery_status_planned": {"uz": "🕒 Rejalashtirilgan", "ru": "🕒 Запланировано", "ko": "🕒 예정됨"},
-    "delivery_status_confirmed": {"uz": "📦 Tasdiqlangan", "ru": "📦 Подтверждено", "ko": "📦 확정됨"},
-    "delivery_status_delivered": {"uz": "✅ Yetkazildi", "ru": "✅ Доставлено", "ko": "✅ 배달완료"},
-    "delivery_status_skipped": {"uz": "⏭ Bekor qilindi", "ru": "⏭ Пропущено", "ko": "⏭ 건너뜀"},
-    "delivery_status_failed": {"uz": "⚠️ Yetkazilmadi", "ru": "⚠️ Не доставлено", "ko": "⚠️ 배달실패"},
     # ---- Xatolar ----
     "error_generic": {
         "uz": "Kechirasiz, xatolik yuz berdi. Qayta urinib ko'ring yoki admin bilan bog'laning.",
