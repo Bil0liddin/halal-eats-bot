@@ -195,13 +195,16 @@ async def create_order_from_cart(session: AsyncSession, user: User, plan_id: int
 
     await validate_cart_against_menu(session, items, lang=lang)
 
-    # Agar foydalanuvchida faol obuna bo'lsa, yangisi ESKISI TUGAGAN KUNNING
-    # ERTASIGA boshlanadi — bir necha obuna bir vaqtda ishlamaydi.
-    active_sub = await get_active_subscription(session, user)
-    if active_sub is not None:
-        starts_on = active_sub.ends_on + timedelta(days=1)
-    else:
-        starts_on = min(ci.delivery_date for ci in items)
+    # Foydalanuvchida allaqachon faol obuna bo'lsa, yangisini sotib olishga
+    # yo'l qo'yilmaydi: savatdagi kunlar doim "shu hafta/oy"ning haqiqiy
+    # taqvim sanalari, obuna esa eskisi tugaganidan keyin boshlanishi kerak —
+    # bu ikkisi mos kelmay, Delivery yozuvlari obunaning o'z sanalaridan
+    # BOSHQA (eski) kunlarga yaratilib qolardi. Foydalanuvchi yangilash
+    # uchun avval joriy obunani bekor qilishi yoki tugashini kutishi kerak.
+    if await get_active_subscription(session, user) is not None:
+        raise BusinessError(t("error_active_subscription_exists", lang))
+
+    starts_on = min(ci.delivery_date for ci in items)
     ends_on = starts_on + timedelta(days=plan.duration_days - 1)
 
     reference = await generate_unique_reference(session)

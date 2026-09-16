@@ -14,7 +14,7 @@ from app.api.auth import current_user, get_session
 from app.bot.keyboards import payment_action_keyboard, pay_url_keyboard
 from app.bot.notify import safe_send
 from app.config import settings
-from app.db.models import Delivery, User
+from app.db.models import Delivery, Plan, User
 from app.i18n import t, weekday_name
 from app.services.payments import get_provider
 from app.services.subscriptions import (
@@ -25,7 +25,6 @@ from app.services.subscriptions import (
     get_active_subscription,
     get_order_by_reference,
     is_before_cutoff,
-    skip_delivery,
 )
 
 router = APIRouter()
@@ -48,12 +47,6 @@ class ChangeDeliveryIn(BaseModel):
 
     delivery_date: date
     menu_item_id: int
-
-
-class SkipDeliveryIn(BaseModel):
-    """Bitta kunlik yetkazishni bekor qilish uchun kiruvchi ma'lumot."""
-
-    delivery_date: date
 
 
 @router.post("/orders/checkout")
@@ -139,6 +132,7 @@ async def my_subscription(
     if subscription is None:
         return {"subscription": None}
 
+    plan = await session.get(Plan, subscription.plan_id)
     now = datetime.now(_TZ)
     result = await session.execute(
         select(Delivery).where(Delivery.subscription_id == subscription.id).order_by(Delivery.delivery_date)
@@ -163,6 +157,8 @@ async def my_subscription(
 
     return {
         "subscription": {
+            "plan_name": plan.name(lang) if plan else None,
+            "plan_period": plan.period.value if plan else None,
             "status": subscription.status.value,
             "starts_on": subscription.starts_on.isoformat(),
             "ends_on": subscription.ends_on.isoformat(),
@@ -194,10 +190,23 @@ async def change_my_delivery(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(current_user),
 ):
-    """"Mening obunam" bo'limidan bitta kunning ovqatini almashtiradi."""
+    """"Mening obunam" bo'limidan bitta kunning ovqatini almashtiradi.
+
+    Yetkazish yozuvi FAQAT foydalanuvchining hozirgi FAOL obunasi doirasida
+    qidiriladi (subscription_id orqali) — sana + user_id bo'yicha qidirish
+    xato edi: eski (bekor qilingan) obunalarning ham o'sha kunlarga Delivery
+    yozuvlari qolib ketishi mumkin, natijada bir nechta mos yozuv topilib
+    server xatosi (500) berardi.
+    """
     lang = user.lang.value if user.lang else "uz"
+    subscription = await get_active_subscription(session, user)
+    if subscription is None:
+        raise HTTPException(status_code=404, detail="Faol obuna topilmadi")
+
     result = await session.execute(
-        select(Delivery).where(Delivery.user_id == user.id, Delivery.delivery_date == payload.delivery_date)
+        select(Delivery).where(
+            Delivery.subscription_id == subscription.id, Delivery.delivery_date == payload.delivery_date
+        )
     )
     delivery = result.scalar_one_or_none()
     if delivery is None:
@@ -208,30 +217,6 @@ async def change_my_delivery(
         await change_delivery_meal(
             session, delivery, payload.menu_item_id, now=now, cutoff_hour=settings.order_cutoff_hour, lang=lang
         )
-    except BusinessError as exc:
-        raise HTTPException(status_code=400, detail=exc.message) from exc
-
-    return {"ok": True}
-
-
-@router.post("/deliveries/skip")
-async def skip_my_delivery(
-    payload: SkipDeliveryIn,
-    session: AsyncSession = Depends(get_session),
-    user: User = Depends(current_user),
-):
-    """"Mening obunam" bo'limidan bitta kunni butunlay bekor qiladi (obuna muddati 1 kunga uzayadi)."""
-    lang = user.lang.value if user.lang else "uz"
-    result = await session.execute(
-        select(Delivery).where(Delivery.user_id == user.id, Delivery.delivery_date == payload.delivery_date)
-    )
-    delivery = result.scalar_one_or_none()
-    if delivery is None:
-        raise HTTPException(status_code=404, detail="Yetkazish topilmadi")
-
-    now = datetime.now(_TZ)
-    try:
-        await skip_delivery(session, delivery, now=now, cutoff_hour=settings.order_cutoff_hour, lang=lang)
     except BusinessError as exc:
         raise HTTPException(status_code=400, detail=exc.message) from exc
 

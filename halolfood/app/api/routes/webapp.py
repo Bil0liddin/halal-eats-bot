@@ -139,7 +139,6 @@ _PAGE = r"""
     <!-- 1-ekran: Reja tanlash -->
     <div id="screen-plans" class="screen active">
       <div id="plans-list"></div>
-      <button id="cancel-sub-link" class="cancel-link hidden"></button>
     </div>
 
     <!-- 2-ekran: Menyu tuzish -->
@@ -162,7 +161,6 @@ _PAGE = r"""
     <div class="sheet">
       <h2 id="day-sheet-heading"></h2>
       <div id="day-sheet-list"></div>
-      <button id="day-sheet-skip-link" class="cancel-link hidden"></button>
     </div>
   </div>
 
@@ -227,10 +225,7 @@ _PAGE = r"""
         sub_heading: "📦 Mening obunam", no_subscription: "Sizda hozircha faol obuna yo'q.",
         meals_left: "Qolgan ovqatlar", valid_until: "Amal qilish muddati",
         change_button: "O'zgartirish", locked_label: "🔒 O'zgartirib bo'lmaydi",
-        skip_day_link: "Bu kunni bekor qilish",
-        skip_day_title: "Shu kunni bekor qilasizmi?",
-        skip_day_body: "Bu kun uchun ovqat yetkazilmaydi, obuna muddati 1 kunga uzayadi.",
-        skip_day_yes: "Ha, bekor qilish",
+        view_details: "Batafsil →",
         order_created: "Buyurtma yaratildi", pay_instructions_sent: "\n\nTo'lov ma'lumotlari bot chatiga ham yuborildi.",
         not_registered: "Avval botda /start buyrug'ini bering va ro'yxatdan o'ting",
         error: "Xatolik yuz berdi", network_error: "Tarmoq xatosi — internetni tekshiring",
@@ -258,10 +253,7 @@ _PAGE = r"""
         sub_heading: "📦 Моя подписка", no_subscription: "У вас пока нет активной подписки.",
         meals_left: "Осталось порций", valid_until: "Действует до",
         change_button: "Изменить", locked_label: "🔒 Изменить нельзя",
-        skip_day_link: "Отменить этот день",
-        skip_day_title: "Отменить этот день?",
-        skip_day_body: "В этот день еда не будет доставлена, подписка продлится на 1 день.",
-        skip_day_yes: "Да, отменить",
+        view_details: "Подробнее →",
         order_created: "Заказ создан", pay_instructions_sent: "\n\nДанные для оплаты также отправлены в чат бота.",
         not_registered: "Сначала отправьте /start боту и зарегистрируйтесь",
         error: "Произошла ошибка", network_error: "Ошибка сети — проверьте интернет",
@@ -289,10 +281,7 @@ _PAGE = r"""
         sub_heading: "📦 My Subscription", no_subscription: "You don't have an active subscription yet.",
         meals_left: "Meals left", valid_until: "Valid until",
         change_button: "Change", locked_label: "🔒 Can't be changed",
-        skip_day_link: "Cancel this day",
-        skip_day_title: "Cancel this day?",
-        skip_day_body: "No meal will be delivered this day, and your subscription will extend by 1 day.",
-        skip_day_yes: "Yes, cancel",
+        view_details: "View details →",
         order_created: "Order created", pay_instructions_sent: "\n\nPayment details were also sent to the bot chat.",
         not_registered: "Please register first with /start in the bot",
         error: "Something went wrong", network_error: "Network error — check your internet connection",
@@ -353,12 +342,32 @@ _PAGE = r"""
     }
 
     // --- Telegram native Back/Main tugmalari ---
-    let backHandler = null;
-    function setBackButton(handler) {
-      if (backHandler) tg.BackButton.offClick(backHandler);
-      backHandler = handler;
-      if (handler) { tg.BackButton.onClick(handler); tg.BackButton.show(); }
-      else { tg.BackButton.hide(); }
+    // BackButton STEK sifatida ishlaydi: har ochilgan qatlam (kun varag'i,
+    // ma'lumot varag'i, tasdiqlash varag'i, obuna tafsiloti va h.k.) o'zining
+    // yopish funksiyasini stekka qo'shadi (pushBack), yopilganda stekdan
+    // olib tashlaydi (popBack) — shunda bir nechta qatlam ustma-ust ochiq
+    // bo'lganda ham "Orqaga" tugmasi har doim ENG USTKI qatlamni to'g'ri
+    // yopadi (avval faqat bitta global handler bo'lgani uchun, masalan
+    // ma'lumot varag'i kun varag'i ustida ochilganda "Orqaga" ishlamay
+    // qolardi — mobil qurilmalarda aynan shu muammo edi).
+    let backStack = [];
+    tg.BackButton.onClick(() => {
+      const handler = backStack[backStack.length - 1];
+      if (handler) handler();
+    });
+    function pushBack(handler) {
+      backStack.push(handler);
+      tg.BackButton.show();
+    }
+    function popBack() {
+      backStack.pop();
+      if (backStack.length === 0) tg.BackButton.hide();
+    }
+    function resetBack(baseHandler) {
+      // Yangi tub (top-level) ekranga o'tilganda butun stek tozalanadi —
+      // qatlamlar orasida biror joyda unutilib qolgan handler bo'lmasin.
+      backStack = baseHandler ? [baseHandler] : [];
+      if (backStack.length === 0) tg.BackButton.hide(); else tg.BackButton.show();
     }
 
     let mainHandler = null;
@@ -373,9 +382,9 @@ _PAGE = r"""
     }
 
     function updateNativeButtons(screenName) {
-      if (screenName === "plans") { setBackButton(null); setMainButton(null); }
-      else if (screenName === "subscription") { setBackButton(() => switchTab("plans")); setMainButton(null); }
-      else if (screenName === "builder") { setBackButton(() => switchTab("plans")); updateBuilderMainButton(); }
+      if (screenName === "plans") { resetBack(null); setMainButton(null); }
+      else if (screenName === "subscription") { resetBack(() => switchTab("plans")); setMainButton(null); }
+      else if (screenName === "builder") { resetBack(() => switchTab("plans")); updateBuilderMainButton(); }
     }
 
     // --- 1-ekran: Reja tanlash ---
@@ -389,14 +398,10 @@ _PAGE = r"""
           <button onclick="startBuilder(${p.id})">${L("choose")}</button>
         </div>
       `).join("");
-
-      const cancelLink = document.getElementById("cancel-sub-link");
-      cancelLink.textContent = L("cancel_link");
-      cancelLink.classList.toggle("hidden", !activeSubscription);
     }
 
-    // Bitta umumiy tasdiqlash varag'i — obunani bekor qilish VA bitta kunni
-    // bekor qilish shu varaqdan foydalanadi, faqat matn va amal (onConfirm) farqlanadi.
+    // Bitta umumiy tasdiqlash varag'i — hozircha faqat "obunani bekor
+    // qilish" shu varaqdan foydalanadi.
     let pendingConfirmAction = null;
 
     function openConfirmSheet({ title, body, yesText, noText, onConfirm }) {
@@ -406,42 +411,19 @@ _PAGE = r"""
       document.getElementById("cancel-confirm-no").textContent = noText;
       pendingConfirmAction = onConfirm;
       document.getElementById("cancel-confirm-overlay").hidden = false;
+      pushBack(closeConfirmSheet);
     }
 
-    document.getElementById("cancel-sub-link").addEventListener("click", () => {
-      openConfirmSheet({
-        title: L("cancel_title"), body: L("cancel_body"),
-        yesText: L("cancel_yes"), noText: L("cancel_no"),
-        onConfirm: async () => {
-          await api("/api/subscriptions/cancel", { method: "POST" });
-          activeSubscription = null;
-          renderPlans();
-          showToast(L("cancel_yes"));
-        },
-      });
-    });
-    document.getElementById("day-sheet-skip-link").addEventListener("click", () => {
-      const dateStr = dayPickerDate;
-      openConfirmSheet({
-        title: L("skip_day_title"), body: L("skip_day_body"),
-        yesText: L("skip_day_yes"), noText: L("cancel_no"),
-        onConfirm: async () => {
-          await api("/api/deliveries/skip", { method: "POST", body: JSON.stringify({ delivery_date: dateStr }) });
-          closeDaySheet();
-          await loadSubscription();
-          renderSubscriptionScreen();
-          showToast(L("skip_day_yes"));
-        },
-      });
-    });
-    document.getElementById("cancel-confirm-no").addEventListener("click", () => {
+    function closeConfirmSheet() {
       document.getElementById("cancel-confirm-overlay").hidden = true;
       pendingConfirmAction = null;
-    });
+      popBack();
+    }
+
+    document.getElementById("cancel-confirm-no").addEventListener("click", closeConfirmSheet);
     document.getElementById("cancel-confirm-yes").addEventListener("click", async () => {
-      document.getElementById("cancel-confirm-overlay").hidden = true;
       const action = pendingConfirmAction;
-      pendingConfirmAction = null;
+      closeConfirmSheet();
       if (!action) return;
       try { await action(); } catch (e) { showToast(e.message); }
     });
@@ -583,18 +565,14 @@ _PAGE = r"""
         </div>
       `).join("");
 
-      const skipLink = document.getElementById("day-sheet-skip-link");
-      skipLink.textContent = L("skip_day_link");
-      skipLink.classList.toggle("hidden", mode !== "change");
-
       document.getElementById("day-sheet-overlay").hidden = false;
-      setBackButton(closeDaySheet);
+      pushBack(closeDaySheet);
     }
 
     function closeDaySheet() {
       document.getElementById("day-sheet-overlay").hidden = true;
-      if (dayPickerMode === "builder") updateNativeButtons("builder");
-      else updateNativeButtons("subscription");
+      popBack();
+      if (dayPickerMode === "builder") updateBuilderMainButton();
     }
 
     async function chooseFood(menuItemId) {
@@ -614,7 +592,7 @@ _PAGE = r"""
           });
           closeDaySheet();
           await loadSubscription();
-          renderSubscriptionScreen();
+          renderSubscriptionDetail();
         }
       } catch (e) { showToast(e.message); }
     }
@@ -644,28 +622,67 @@ _PAGE = r"""
       `).join("");
       document.getElementById("info-sheet-close").textContent = L("close");
       document.getElementById("info-sheet-overlay").hidden = false;
+      pushBack(closeInfoSheet);
     }
 
-    document.getElementById("info-sheet-close").addEventListener("click", () => {
+    function closeInfoSheet() {
       document.getElementById("info-sheet-overlay").hidden = true;
-    });
+      popBack();
+    }
+
+    document.getElementById("info-sheet-close").addEventListener("click", closeInfoSheet);
 
     // --- 3-ekran: Mening obunam ---
+    // Ikki qatlam: avval umumiy KARTA (reja nomi + qisqa holat), keyin
+    // shu kartani bosib ICHIGA kirilganda kunma-kun ro'yxat + pastda
+    // "obunani bekor qilish" tugmasi ko'rinadi.
+    let subscriptionView = "overview"; // "overview" | "detail"
+
     async function loadSubscription() {
       const data = await api("/api/orders/me/subscription");
       activeSubscription = data.subscription;
     }
 
     function renderSubscriptionScreen() {
+      subscriptionView = "overview";
       document.getElementById("tab-subscription").textContent = L("subscription_tab");
-      const el = document.getElementById("subscription-content");
+      renderSubscriptionOverview();
+    }
 
+    function renderSubscriptionOverview() {
+      const el = document.getElementById("subscription-content");
       if (!activeSubscription) {
         el.innerHTML = `<h1>${L("sub_heading")}</h1><p class="muted">${L("no_subscription")}</p>`;
         return;
       }
-
       const s = activeSubscription;
+      el.innerHTML = `
+        <h1>${L("sub_heading")}</h1>
+        <div class="plan-card">
+          <h3>${s.plan_name || ""}</h3>
+          <div class="sub">${L("meals_left")}: ${s.meals_left}/${s.meals_total}</div>
+          <div class="sub">${L("valid_until")}: ${s.ends_on}</div>
+          <button onclick="openSubscriptionDetail()">${L("view_details")}</button>
+        </div>`;
+    }
+
+    function openSubscriptionDetail() {
+      subscriptionView = "detail";
+      renderSubscriptionDetail();
+      pushBack(closeSubscriptionDetail);
+    }
+
+    function closeSubscriptionDetail() {
+      subscriptionView = "overview";
+      renderSubscriptionOverview();
+      popBack();
+    }
+
+    function renderSubscriptionDetail() {
+      const el = document.getElementById("subscription-content");
+      const s = activeSubscription;
+      if (!s) { renderSubscriptionOverview(); return; }
+
       const groups = {};
       for (const d of s.deliveries) {
         if (!groups[d.week_start]) groups[d.week_start] = [];
@@ -673,7 +690,7 @@ _PAGE = r"""
       }
       const weekStarts = Object.keys(groups).sort();
 
-      let html = `<h1>${L("sub_heading")}</h1>
+      let html = `<h1>${s.plan_name || L("sub_heading")}</h1>
         <div class="sub-summary">
           <div class="row"><span>${L("meals_left")}</span><span>${s.meals_left}/${s.meals_total}</span></div>
           <div class="row"><span>${L("valid_until")}</span><span>${s.ends_on}</span></div>
@@ -696,7 +713,22 @@ _PAGE = r"""
         }
       });
 
+      html += `<button id="cancel-sub-link" class="cancel-link">${L("cancel_link")}</button>`;
       el.innerHTML = html;
+      document.getElementById("cancel-sub-link").addEventListener("click", onCancelSubscriptionClick);
+    }
+
+    function onCancelSubscriptionClick() {
+      openConfirmSheet({
+        title: L("cancel_title"), body: L("cancel_body"),
+        yesText: L("cancel_yes"), noText: L("cancel_no"),
+        onConfirm: async () => {
+          await api("/api/subscriptions/cancel", { method: "POST" });
+          activeSubscription = null;
+          closeSubscriptionDetail();
+          showToast(L("cancel_yes"));
+        },
+      });
     }
 
     async function openChangeSheet(dateStr) {
@@ -721,9 +753,14 @@ _PAGE = r"""
       document.getElementById("pay-body").textContent = body;
       document.getElementById("pay-close").textContent = L("close");
       document.getElementById("pay-overlay").hidden = false;
+      pushBack(closePayOverlay);
+    }
+    function closePayOverlay() {
+      document.getElementById("pay-overlay").hidden = true;
+      popBack();
     }
     document.getElementById("pay-close").addEventListener("click", async () => {
-      document.getElementById("pay-overlay").hidden = true;
+      closePayOverlay();
       await loadSubscription();
       switchTab("plans");
       renderPlans();

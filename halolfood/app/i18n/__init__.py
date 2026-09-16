@@ -224,6 +224,11 @@ TEXTS: dict[str, dict[str, str]] = {
         "ru": "Сначала зарегистрируйтесь: /start",
         "en": "Please register first: /start",
     },
+    "error_active_subscription_exists": {
+        "uz": "Sizda allaqachon faol obuna bor. Yangisini olishdan oldin joriy obunani bekor qiling yoki tugashini kuting.",
+        "ru": "У вас уже есть активная подписка. Прежде чем оформить новую, отмените текущую или дождитесь её окончания.",
+        "en": "You already have an active subscription. Cancel your current one or wait for it to end before getting a new one.",
+    },
     "error_blocked": {
         "uz": "Sizga botdan foydalanish taqiqlangan.",
         "ru": "Вам запрещено пользоваться ботом.",
