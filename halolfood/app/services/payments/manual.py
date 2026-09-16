@@ -27,14 +27,14 @@ _INSTRUCTIONS = {
         "⚠️ Вместо имени отправителя введите именно это: {reference}\n\n"
         "После оплаты нажмите кнопку \"Я оплатил\" ниже."
     ),
-    "ko": (
-        "💳 아래 계좌로 입금해 주세요:\n\n"
-        "은행: {bank_name}\n"
-        "계좌번호: {bank_account}\n"
-        "예금주: {bank_holder}\n"
-        "금액: {amount}원\n\n"
-        "⚠️ 입금자명 대신 반드시 이것을 입력하세요: {reference}\n\n"
-        "입금 후 아래 \"결제했어요\" 버튼을 눌러주세요."
+    "en": (
+        "💳 Please transfer the payment to this account:\n\n"
+        "Bank: {bank_name}\n"
+        "Account number: {bank_account}\n"
+        "Account holder: {bank_holder}\n"
+        "Amount: {amount} won\n\n"
+        "⚠️ Instead of the sender's name, enter exactly this: {reference}\n\n"
+        "After paying, tap the \"I've paid\" button below."
     ),
 }
 

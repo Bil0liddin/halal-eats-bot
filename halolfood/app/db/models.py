@@ -39,7 +39,7 @@ from app.db.base import Base, TimestampMixin
 class Lang(str, enum.Enum):
     UZ = "uz"
     RU = "ru"
-    KO = "ko"
+    EN = "en"
 
 
 class PlanPeriod(str, enum.Enum):
@@ -134,7 +134,7 @@ class Plan(Base, TimestampMixin):
     code: Mapped[str] = mapped_column(String(32), unique=True)
     name_uz: Mapped[str] = mapped_column(String(128))
     name_ru: Mapped[str] = mapped_column(String(128))
-    name_ko: Mapped[str] = mapped_column(String(128))
+    name_en: Mapped[str] = mapped_column(String(128))
     period: Mapped[PlanPeriod] = mapped_column(SAEnum(PlanPeriod, native_enum=False))
     meals_count: Mapped[int] = mapped_column(Integer)
     duration_days: Mapped[int] = mapped_column(Integer)
@@ -145,7 +145,7 @@ class Plan(Base, TimestampMixin):
 
     def name(self, lang: str) -> str:
         """Berilgan tildagi nomni qaytaradi."""
-        return {"uz": self.name_uz, "ru": self.name_ru, "ko": self.name_ko}.get(lang, self.name_uz)
+        return {"uz": self.name_uz, "ru": self.name_ru, "en": self.name_en}.get(lang, self.name_uz)
 
     @property
     def price_per_meal(self) -> int:
@@ -162,10 +162,10 @@ class MenuItem(Base, TimestampMixin):
     code: Mapped[str] = mapped_column(String(32), unique=True)
     name_uz: Mapped[str] = mapped_column(String(128))
     name_ru: Mapped[str] = mapped_column(String(128))
-    name_ko: Mapped[str] = mapped_column(String(128))
+    name_en: Mapped[str] = mapped_column(String(128))
     description_uz: Mapped[str] = mapped_column(Text, default="")
     description_ru: Mapped[str] = mapped_column(Text, default="")
-    description_ko: Mapped[str] = mapped_column(Text, default="")
+    description_en: Mapped[str] = mapped_column(Text, default="")
     category: Mapped[MealCategory] = mapped_column(SAEnum(MealCategory, native_enum=False))
     photo_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     is_halal_certified: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -179,13 +179,13 @@ class MenuItem(Base, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     def name(self, lang: str) -> str:
-        return {"uz": self.name_uz, "ru": self.name_ru, "ko": self.name_ko}.get(lang, self.name_uz)
+        return {"uz": self.name_uz, "ru": self.name_ru, "en": self.name_en}.get(lang, self.name_uz)
 
     def description(self, lang: str) -> str:
         return {
             "uz": self.description_uz,
             "ru": self.description_ru,
-            "ko": self.description_ko,
+            "en": self.description_en,
         }.get(lang, self.description_uz)
 
 

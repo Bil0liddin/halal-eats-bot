@@ -55,7 +55,7 @@ async def setup_fixtures():
             code="TEST5",
             name_uz="Test reja",
             name_ru="Тестовый план",
-            name_ko="테스트 플랜",
+            name_en="Test plan",
             period=PlanPeriod.WEEKLY,
             meals_count=5,
             duration_days=7,
@@ -69,7 +69,7 @@ async def setup_fixtures():
                 code=f"ITEM{i}",
                 name_uz=f"Taom {i}",
                 name_ru=f"Блюдо {i}",
-                name_ko=f"음식 {i}",
+                name_en=f"Food {i}",
                 category=MealCategory.MAIN,
             )
             items.append(item)
